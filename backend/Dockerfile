@@ -16,7 +16,7 @@ RUN npm ci --legacy-peer-deps && npm cache clean --force
 FROM base AS build
 COPY package*.json package-lock.json* ./
 COPY tsconfig*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY src ./src
 RUN npm run build
 
