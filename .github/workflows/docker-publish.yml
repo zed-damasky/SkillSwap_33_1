@@ -58,3 +58,4 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/skillswap-frontend:latest
           provenance: false
           sbom: false
+          
