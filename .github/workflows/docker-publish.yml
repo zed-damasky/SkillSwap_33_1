@@ -10,38 +10,20 @@ permissions:
   packages: write
 
 jobs:
-  build-images:
+  build-and-push:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - name: backend
-            context: ./backend
-            dockerfile: ./backend/Dockerfile
-            image-name: skillswap-backend
-            target: development
-          - name: frontend
-            context: ./frontend
-            dockerfile: ./frontend/Dockerfile
-            image-name: skillswap-frontend
-            target: development
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image-name }}
-          tags: |
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=raw,value=latest
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Debug repository structure
+        run: |
+          echo "PWD: $(pwd)"
+          ls -la
+          ls -la backend/ 2>/dev/null || echo "backend/ not found"
+          ls -la frontend/ 2>/dev/null || echo "frontend/ not found"
+          test -f backend/Dockerfile && echo "backend/Dockerfile: EXISTS" || echo "backend/Dockerfile: MISSING"
+          test -f frontend/Dockerfile && echo "frontend/Dockerfile: EXISTS" || echo "frontend/Dockerfile: MISSING"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -50,16 +32,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
-          target: ${{ matrix.target }}
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/skillswap-backend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/skillswap-backend:latest
+          provenance: false
+          sbom: false
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/skillswap-frontend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/skillswap-frontend:latest
           provenance: false
           sbom: false
