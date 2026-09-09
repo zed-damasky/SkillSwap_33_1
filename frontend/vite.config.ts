@@ -36,13 +36,16 @@ export default defineConfig(({ command }) => {
       },
     },
     server: {
+      host: '0.0.0.0', 
+      allowedHosts: true, 
+      port: process.env.PORT ? parseInt(process.env.PORT) : 8080, 
       open: false,
-      port: 8080,
       proxy: {
         '/api': {
-          target: 'http://host.docker.internal:3000',
+          
+          target: 'http://divine-success.railway.internal:3000', 
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, '')  // Убирает /api префикс
+          rewrite: (path) => path.replace(/^\/api/, '')
         }
       }
     },
